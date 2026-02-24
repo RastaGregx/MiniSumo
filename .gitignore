@@ -4,6 +4,8 @@ Release/
 
 # Ustawienia IDE specyficzne dla twojego komputera
 .metadata/
+.settings/
+
 
 # Skompilowane pliki
 *.elf
@@ -11,3 +13,4 @@ Release/
 *.hex
 *.map
 *.lst
+*.launch
