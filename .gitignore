@@ -1,0 +1,13 @@
+# Foldery z wynikami kompilacji
+Debug/
+Release/
+
+# Ustawienia IDE specyficzne dla twojego komputera
+.metadata/
+
+# Skompilowane pliki
+*.elf
+*.bin
+*.hex
+*.map
+*.lst
