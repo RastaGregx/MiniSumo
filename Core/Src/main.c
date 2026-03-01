@@ -27,7 +27,13 @@
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
+typedef enum {
+	  STAN_SZUKAJ,
+	  STAN_ATAK,
+	  STAN_UNIK_KRAWEDZI
+	} StanRobota;
 
+	static StanRobota stan = STAN_SZUKAJ;
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
@@ -35,7 +41,9 @@
 
 #define PCA9548A_ADDR 0x70  // adres multiplexera (A0,A1,A2 = GND)
 #define MOTOR_MAX 99  // wartość PWM (0-99, odpowiada Period w TIM1/TIM2)
-
+#define PROG_KRAWEDZI_ADC 2000
+#define PROG_WROG_BLISKO  300
+#define PROG_WROG_DALEKO  1000
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -132,7 +140,7 @@ int main(void)
 {
 
   /* USER CODE BEGIN 1 */
-
+  
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -225,17 +233,55 @@ int main(void)
         printf("RING: %lu | WROG1: %u mm | WROG2: %u mm\r\n",
                ring_sensors[0], dystans1_mm, dystans2_mm);
 
-        motorA(80);   // silnik A do przodu, 80% mocy
-        motorB(80);   // silnik B do przodu, 80% mocy
-        HAL_Delay(1000);
-        motorA(0);
-        motorB(0);
-        HAL_Delay(500);
-        motorA(-80);  // wstecz
-        motorB(-80);
-        HAL_Delay(1000);
+        uint8_t krawedz =
+           (ring_sensors[0] < PROG_KRAWEDZI_ADC) || (ring_sensors[1] < PROG_KRAWEDZI_ADC) ||
+           (ring_sensors[2] < PROG_KRAWEDZI_ADC) || (ring_sensors[3] < PROG_KRAWEDZI_ADC) ||
+           (ring_sensors[4] < PROG_KRAWEDZI_ADC);
 
-        HAL_Delay(200);
+        uint8_t wrog_blisko =
+           (dystans1_mm < PROG_WROG_BLISKO) || (dystans2_mm < PROG_WROG_BLISKO);
+
+        uint8_t wrog_zgubiony =
+           (dystans1_mm > PROG_WROG_DALEKO) && (dystans2_mm > PROG_WROG_DALEKO);
+
+
+        if (krawedz) {
+          stan = STAN_UNIK_KRAWEDZI;
+        }
+
+        switch (stan)
+        {
+          case STAN_SZUKAJ:
+
+            motorA(60);
+            motorB(-40);
+
+            if (wrog_blisko) stan = STAN_ATAK;
+            HAL_Delay(30);
+            break;
+
+          case STAN_ATAK:
+
+            motorA(95);
+            motorB(95);
+
+            if (wrog_zgubiony) stan = STAN_SZUKAJ;
+            HAL_Delay(20);
+            break;
+
+          case STAN_UNIK_KRAWEDZI:
+
+            motorA(-90);
+            motorB(-90);
+            HAL_Delay(350);
+
+            motorA(80);
+            motorB(-50);
+            HAL_Delay(500);
+
+            stan = STAN_SZUKAJ;
+            break;
+        }
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
